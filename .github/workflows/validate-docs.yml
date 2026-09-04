@@ -1,0 +1,229 @@
+name: Validate Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        run: |
+          git clone https://github.com/${{ github.repository }}.git .
+          git checkout ${{ github.ref_name }}
+      
+      - name: Validate with Python
+        run: |
+          python3 -c "
+import os
+import sys
+
+print('=' * 50)
+print('🔍 VALIDATING DOCUMENTATION - PART 1')
+print('=' * 50)
+print()
+
+# Get all files in repository
+all_files = []
+for root, dirs, files in os.walk('.'):
+    for file in files:
+        if '.git' not in root:
+            all_files.append(os.path.join(root, file))
+
+print('📂 All files in repository:')
+for f in sorted(all_files):
+    print(f'  {f}')
+print()
+
+# Check for required files
+errors = 0
+warnings = 0
+
+# 1. Check for ERD file
+print('📊 Checking for ERD file...')
+erd_files = [f for f in all_files if 'erd' in f.lower() or 'diagram' in f.lower()]
+if erd_files:
+    print(f'  ✅ Found: {erd_files[0]}')
+else:
+    print('  ❌ No ERD file found (looking for ERD.png, ERD.pdf, diagram.png, etc)')
+    errors += 1
+print()
+
+# 2. Check for API Endpoint Plan
+print('📋 Checking for API Endpoint Plan...')
+api_files = [f for f in all_files if 'api' in f.lower() and ('endpoint' in f.lower() or 'plan' in f.lower())]
+if not api_files:
+    api_files = [f for f in all_files if 'endpoint' in f.lower() and 'plan' in f.lower()]
+if not api_files:
+    api_files = [f for f in all_files if 'race' in f.lower() and 'api' in f.lower()]
+if api_files:
+    print(f'  ✅ Found: {api_files[0]}')
+else:
+    print('  ❌ No API Endpoint Plan found')
+    print('     Looking for: RaceDay_API_Endpoint_Plan.docx, API_Endpoint_Plan.md, etc')
+    errors += 1
+print()
+
+# 3. Check for SQL file
+print('🗄️ Checking for SQL file...')
+sql_files = [f for f in all_files if f.endswith('.sql')]
+if sql_files:
+    print(f'  ✅ Found: {sql_files[0]}')
+else:
+    print('  ❌ No SQL file found (looking for SQL.sql, database.sql, etc)')
+    errors += 1
+print()
+
+# 4. Check for README
+print('📖 Checking for README...')
+readme_files = [f for f in all_files if 'readme' in f.lower()]
+if readme_files:
+    print(f'  ✅ Found: {readme_files[0]}')
+else:
+    print('  ❌ No README found')
+    errors += 1
+print()
+
+# Summary
+print('=' * 50)
+print('📊 VALIDATION SUMMARY')
+print('=' * 50)
+print(f'  Errors: {errors}')
+print(f'  Warnings: {warnings}')
+print()
+
+if errors == 0:
+    print('✅✅✅ ALL FILES FOUND - GREEN BUILD ✅✅✅')
+    print()
+    print('Found files:')
+    print(f'  📊 ERD: {erd_files[0] if erd_files else "Not found"}')
+    print(f'  📋 API Plan: {api_files[0] if api_files else "Not found"}')
+    print(f'  🗄️ SQL: {sql_files[0] if sql_files else "Not found"}')
+    print(f'  📖 README: {readme_files[0] if readme_files else "Not found"}')
+    print('=' * 50)
+    sys.exit(0)
+else:
+    print('❌❌❌ MISSING FILES - RED BUILD ❌❌❌')
+    print()
+    print('Please ensure these files exist:')
+    print('  1. Any ERD file (ERD.png, ERD.pdf, diagram.png, etc)')
+    print('  2. Any API Endpoint Plan (RaceDay_API_Endpoint_Plan.docx, API_Endpoint_Plan.md, etc)')
+    print('  3. Any SQL file (SQL.sql, RaceDay_Database.sql, database.sql, etc)')
+    print('  4. README.md')
+    print('=' * 50)
+    sys.exit(1)
+"
+      
+      - name: Analyze SQL with Python
+        if: success() || failure()
+        run: |
+          python3 -c "
+import os
+import sys
+
+# Find SQL file
+sql_files = []
+for root, dirs, files in os.walk('.'):
+    for file in files:
+        if file.endswith('.sql') and '.git' not in root:
+            sql_files.append(os.path.join(root, file))
+
+if not sql_files:
+    print('⚠️ No SQL file found for analysis')
+    sys.exit(0)
+
+sql_file = sql_files[0]
+print()
+print('=' * 50)
+print('🗄️ SQL SCRIPT ANALYSIS')
+print('=' * 50)
+print(f'📄 Analyzing: {sql_file}')
+print()
+
+try:
+    with open(sql_file, 'r', encoding='utf-8', errors='ignore') as f:
+        content = f.read()
+        
+    table_count = content.upper().count('CREATE TABLE')
+    insert_count = content.upper().count('INSERT INTO')
+    fk_count = content.upper().count('FOREIGN KEY')
+    pk_count = content.upper().count('PRIMARY KEY')
+    
+    print(f'  📊 CREATE TABLE statements: {table_count}')
+    print(f'  📊 INSERT statements: {insert_count}')
+    print(f'  📊 FOREIGN KEY constraints: {fk_count}')
+    print(f'  📊 PRIMARY KEY definitions: {pk_count}')
+    print()
+    
+    if table_count >= 6:
+        print(f'  ✅ Table count ({table_count}) meets minimum of 6')
+    else:
+        print(f'  ⚠️ Warning: Table count ({table_count}) is less than 6')
+    
+except Exception as e:
+    print(f'  ⚠️ Error reading SQL file: {e}')
+
+print('=' * 50)
+"
+      
+      - name: Check commits
+        run: |
+          echo ""
+          echo "================================================"
+          echo "📊 COMMIT STATISTICS"
+          echo "================================================"
+          
+          COMMIT_COUNT=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+          echo "  📊 Total commits: $COMMIT_COUNT"
+          
+          if [ $COMMIT_COUNT -ge 20 ]; then
+            echo "  ✅ Commit count meets minimum requirement (20+)"
+          else
+            echo "  ⚠️ Warning: Only $COMMIT_COUNT commits (minimum 20)"
+          fi
+          
+          echo ""
+          echo "  📋 Recent commits:"
+          git log --oneline -5 2>/dev/null | sed 's/^/    /' || echo "    No commits found"
+          echo ""
+          echo "================================================"
+      
+      - name: Success
+        if: success()
+        run: |
+          echo ""
+          echo "🎉🎉🎉================================================"
+          echo "🎉🎉🎉  GREEN BUILD - SUCCESSFUL  🎉🎉🎉"
+          echo "🎉🎉🎉================================================"
+          echo ""
+          echo "✅ All required files found"
+          echo "✅ Validation passed successfully"
+          echo ""
+          echo "🔗 Repository: ${{ github.repository }}"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+          echo "================================================"
+      
+      - name: Failure
+        if: failure()
+        run: |
+          echo ""
+          echo "❌❌❌================================================"
+          echo "❌❌❌  RED BUILD - FAILED  ❌❌❌"
+          echo "❌❌❌================================================"
+          echo ""
+          echo "Missing required files!"
+          echo ""
+          echo "Required:"
+          echo "  1. Any ERD file (ERD.png, ERD.pdf, diagram.png, etc)"
+          echo "  2. Any API Endpoint Plan (RaceDay_API_Endpoint_Plan.docx, etc)"
+          echo "  3. Any SQL file (SQL.sql, RaceDay_Database.sql, etc)"
+          echo "  4. README.md"
+          echo ""
+          echo "Check the validation output above for details."
+          echo "================================================"
+          exit 1
