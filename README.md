@@ -48,4 +48,4 @@ RaceDay is a full-stack web-based event management system designed specifically 
 ## 🎥 Video Presentation
 [YouTube Video Link - INSERT YOUR UNLISTED YOUTUBE LINK HERE]
 
-## 📂 Project Structure
+
