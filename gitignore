@@ -1,0 +1,533 @@
+# ============================================
+# Visual Studio / C# Project Files
+# ============================================
+
+## Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.pdb
+*.vsp
+*.vspx
+*.sln.ide
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+## Visual Studio Code
+.vscode/
+*.code-workspace
+
+## Rider
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# ============================================
+# Database Files
+# ============================================
+
+## SQL Server
+*.mdf
+*.ldf
+*.bak
+*.trn
+*.log
+*.ndf
+*.ldf
+*.mdb
+*.accdb
+
+## SQL Scripts (keep your schema, but ignore data backups)
+*_data.sql
+*_backup.sql
+*.sql.bak
+*.sql.tmp
+
+## Database connection strings
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Local.json
+*.local.json
+*.secrets.json
+*.user.secrets.json
+
+# ============================================
+# Node.js / NPM / Yarn
+# ============================================
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+out
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# ============================================
+# Python (for any Python scripts)
+# ============================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+
+# PEP 582
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# ============================================
+# Operating System Files
+# ============================================
+
+## Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.DS_Store
+*.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon
+Icon?
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+## Linux
+*~
+.directory
+*.swp
+*.swo
+*.swn
+*.swm
+*.swl
+
+# ============================================
+# Docker
+# ============================================
+
+docker-compose.override.yml
+docker-compose.*.yml
+*.dockerignore
+Dockerfile.local
+
+# ============================================
+# Terraform (if using)
+# ============================================
+
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# ============================================
+# Azure / Cloud
+# ============================================
+
+## Azure Functions
+local.settings.json
+*.pubxml
+
+## Azure Key Vault
+*.keyvault
+*.pfx
+*.pem
+*.key
+
+# ============================================
+# Logs and Databases
+# ============================================
+
+logs/
+*.log
+*.log.*
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.db-journal
+
+# ============================================
+# Package Managers
+# ============================================
+
+## NuGet
+packages/
+*.nupkg
+*.snupkg
+
+## npm / yarn / pnpm
+node_modules/
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ============================================
+# Project Specific
+# ============================================
+
+## RaceDay Project
+# Backup files
+*.backup
+*.bak
+*.old
+*.orig
+
+# Temporary SQL files
+*.tmp.sql
+*_temp.sql
+
+# User-specific files
+*.user
+*.userprefs
+
+# Database connection strings
+connectionStrings.config
+ConnectionStrings.config
+
+# Build outputs
+/Publish/
+/Output/
+/Deploy/
+
+# Test results
+TestResults/
+*.trx
+*.coverage
+
+# Code coverage
+*.coveragexml
+*.coverage
+*.codecoverage
+
+# ============================================
+# Documentation Files (Keep Source, Ignore Generated)
+# ============================================
+
+# Generated documentation
+docs/_build/
+docs/api/
+docs/html/
+docs/latex/
+docs/man/
+docs/texinfo/
+docs/_autosummary/
+
+# ============================================
+# IDE and Editor Files
+# ============================================
+
+## VS Code
+.vscode/
+*.code-workspace
+
+## Visual Studio
+*.vsconfig
+*.vssettings
+*.vstemplate
+*.vsix
+*.vsixmanifest
+
+## JetBrains
+.idea/
+*.iml
+*.ipr
+*.iws
+*.classpath
+*.project
+*.settings/
+*.prefs
+*.cache
+
+## Sublime Text
+*.sublime-project
+*.sublime-workspace
+*.sublime-*
+
+## Atom
+.atom/
+*.atom
+
+## Vim
+*.swp
+*.swo
+*.un~
+*~
+
+## Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ============================================
+# Archive and Compressed Files
+# ============================================
+
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tgz
+*.7z
+*.rar
+*.gz
+*.bz2
+
+# ============================================
+# Miscellaneous
+# ============================================
+
+# Certificates
+*.cer
+*.crt
+*.p12
+*.pfx
+*.pem
+
+# Secrets
+*.secret
+*.secrets
+*.key
+*.pem
+*.crt
+*.cer
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+*.testresult
+jest.config.js
