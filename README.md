@@ -41,7 +41,7 @@ RaceDay is a full-stack web-based event management system designed specifically 
 
 ## 🏷️ CI/CD Status
 <img width="1896" height="402" alt="Workflow" src="https://github.com/user-attachments/assets/443b20ec-cd41-4303-a42f-bf7776ef14aa" />
-<img width="1896" height="402" alt="Screenshot 2026-09-04 223033" src="https://github.com/user-attachments/assets/99570c8d-960f-4fee-bf2a-3515b3919675" />
+<img width="1911" height="711" alt="CI-Workflow" src="https://github.com/user-attachments/assets/959b86aa-27b5-479d-98c8-5dc61351406f" />
 
 
 
