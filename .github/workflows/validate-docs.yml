@@ -1,0 +1,239 @@
+name: Validate Documentation - Part 1
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        persist-credentials: false  # Avoid authentication issues
+    
+    - name: Verify checkout
+      run: |
+        echo "📁 Current directory: $(pwd)"
+        echo "📂 Files:"
+        ls -la
+        echo ""
+        echo "🌿 Current branch: $(git branch --show-current)"
+        echo "📊 Commit count: $(git rev-list --count HEAD)"
+    
+    - name: Validate Required Files
+      run: |
+        echo "🔍 Validating required files for Part 1..."
+        echo "================================================"
+        
+        # Check docs folder
+        if [ ! -d "docs" ]; then
+          echo "❌ Error: docs folder not found!"
+          echo "Please create a 'docs' folder in the root directory."
+          exit 1
+        fi
+        echo "✅ docs folder exists"
+        
+        # List docs contents
+        echo ""
+        echo "📂 Contents of docs folder:"
+        ls -la docs/
+        echo ""
+        
+        # Check ERD (any format)
+        if [ ! -f "docs/ERD.png" ] && [ ! -f "docs/ERD.pdf" ] && [ ! -f "docs/ERD.jpg" ] && [ ! -f "docs/ERD.jpeg" ]; then
+          echo "❌ Error: ERD file not found in docs folder!"
+          echo "Required: docs/ERD.png or docs/ERD.pdf or docs/ERD.jpg"
+          echo "Please add your Entity Relationship Diagram."
+          exit 1
+        fi
+        echo "✅ ERD file found"
+        
+        # Check API Plan
+        if [ ! -f "docs/API_Endpoint_Plan.md" ] && [ ! -f "docs/API_Endpoint_Plan.pdf" ] && [ ! -f "docs/API_Endpoint_Plan.txt" ]; then
+          echo "❌ Error: API Endpoint Plan not found in docs folder!"
+          echo "Required: docs/API_Endpoint_Plan.md or docs/API_Endpoint_Plan.pdf"
+          echo "Please add your API endpoint plan."
+          exit 1
+        fi
+        echo "✅ API Endpoint Plan found"
+        
+        # Check SQL Script
+        if [ ! -f "docs/RaceDay_Database.sql" ] && [ ! -f "docs/database.sql" ] && [ ! -f "docs/schema.sql" ]; then
+          echo "❌ Error: SQL script not found in docs folder!"
+          echo "Required: docs/RaceDay_Database.sql"
+          echo "Please add your SQL database creation script."
+          exit 1
+        fi
+        echo "✅ SQL Script found"
+        
+        # Check README
+        if [ ! -f "README.md" ]; then
+          echo "❌ Error: README.md not found in root directory!"
+          echo "Please create a README.md file with project documentation."
+          exit 1
+        fi
+        echo "✅ README.md found"
+        
+        echo ""
+        echo "================================================"
+        echo "✅ All required files are present!"
+    
+    - name: Validate SQL Script
+      run: |
+        echo ""
+        echo "📊 SQL Script Analysis:"
+        echo "================================================"
+        
+        # Determine which SQL file exists
+        if [ -f "docs/RaceDay_Database.sql" ]; then
+          SQL_FILE="docs/RaceDay_Database.sql"
+        elif [ -f "docs/database.sql" ]; then
+          SQL_FILE="docs/database.sql"
+        else
+          SQL_FILE="docs/schema.sql"
+        fi
+        
+        echo "📄 Analyzing: $SQL_FILE"
+        echo ""
+        
+        # Count tables
+        TABLE_COUNT=$(grep -c "CREATE TABLE" "$SQL_FILE" || echo "0")
+        echo "📊 Tables: $TABLE_COUNT"
+        
+        # Count INSERT statements
+        INSERT_COUNT=$(grep -c "INSERT INTO" "$SQL_FILE" || echo "0")
+        echo "📊 INSERT statements: $INSERT_COUNT"
+        
+        # Count FOREIGN KEY constraints
+        FK_COUNT=$(grep -c "FOREIGN KEY" "$SQL_FILE" || echo "0")
+        echo "📊 FOREIGN KEY constraints: $FK_COUNT"
+        
+        # Count PRIMARY KEY definitions
+        PK_COUNT=$(grep -c "PRIMARY KEY" "$SQL_FILE" || echo "0")
+        echo "📊 PRIMARY KEY definitions: $PK_COUNT"
+        
+        echo ""
+        
+        # Check minimum requirements
+        if [ $TABLE_COUNT -lt 6 ]; then
+          echo "⚠️ Warning: Less than 6 tables found (minimum required for this assignment)"
+        else
+          echo "✅ Table count meets minimum requirement (6+)"
+        fi
+        
+        if [ $INSERT_COUNT -lt 4 ]; then
+          echo "⚠️ Warning: Less than 4 INSERT statements (sample data recommended)"
+        else
+          echo "✅ Sample data found"
+        fi
+        
+        echo ""
+        echo "================================================"
+    
+    - name: Check Commit Count
+      run: |
+        echo ""
+        echo "📊 Commit Statistics:"
+        echo "================================================"
+        
+        COMMIT_COUNT=$(git rev-list --count HEAD)
+        echo "📊 Total commits: $COMMIT_COUNT"
+        
+        if [ $COMMIT_COUNT -lt 20 ]; then
+          echo "⚠️ Warning: Only $COMMIT_COUNT commits (minimum 20 required)"
+          echo "Please make more commits before submitting."
+        else
+          echo "✅ Commit count meets minimum requirement (20+)"
+        fi
+        
+        echo ""
+        echo "📋 Recent commits:"
+        echo "----------------------------------------"
+        git log --oneline -10
+        echo "----------------------------------------"
+        echo "================================================"
+    
+    - name: Validate README Content
+      run: |
+        echo ""
+        echo "📄 README.md Analysis:"
+        echo "================================================"
+        
+        # Check for required sections
+        if grep -qi "RaceDay" README.md; then
+          echo "✅ Contains system name"
+        else
+          echo "⚠️ Warning: README might not have the system name"
+        fi
+        
+        if grep -qi "Organiser" README.md && grep -qi "Participant" README.md; then
+          echo "✅ Describes both user roles"
+        else
+          echo "⚠️ Warning: README might not describe both user roles"
+        fi
+        
+        if grep -qi "YouTube" README.md || grep -qi "youtube.com" README.md || grep -qi "youtu.be" README.md; then
+          echo "✅ Contains YouTube link"
+        else
+          echo "⚠️ Warning: README might not have the video link"
+        fi
+        
+        if grep -qi "CI/CD" README.md || grep -qi "build" README.md; then
+          echo "✅ Contains CI/CD information"
+        else
+          echo "⚠️ Warning: README might not have CI/CD information"
+        fi
+        
+        echo ""
+        echo "================================================"
+    
+    - name: Success
+      if: success()
+      run: |
+        echo ""
+        echo "🎉🎉🎉 ALL VALIDATION CHECKS PASSED! 🎉🎉🎉"
+        echo "================================================"
+        echo ""
+        echo "✅ docs folder: Found"
+        echo "✅ ERD file: Found"
+        echo "✅ API Endpoint Plan: Found"
+        echo "✅ SQL Script: Found"
+        echo "✅ README.md: Found"
+        echo "✅ Commits: $(git rev-list --count HEAD) (min 20)"
+        echo ""
+        echo "💡 Next Steps:"
+        echo "   1. Ensure your YouTube video is uploaded and linked in README"
+        echo "   2. Verify CI/CD shows green check mark ✓"
+        echo "   3. Submit GitHub link on ARC"
+        echo ""
+        echo "🔗 Repository: ${{ github.repository }}"
+        echo "🌿 Branch: ${{ github.ref_name }}"
+        echo ""
+        echo "✅✅✅ GREEN BUILD SUCCESSFUL ✅✅✅"
+    
+    - name: Failure
+      if: failure()
+      run: |
+        echo ""
+        echo "❌❌❌ VALIDATION FAILED ❌❌❌"
+        echo "================================================"
+        echo ""
+        echo "Common issues:"
+        echo "1. Missing docs folder"
+        echo "2. Missing ERD diagram (docs/ERD.png, docs/ERD.pdf, or docs/ERD.jpg)"
+        echo "3. Missing API Endpoint Plan (docs/API_Endpoint_Plan.md or docs/API_Endpoint_Plan.pdf)"
+        echo "4. Missing SQL script (docs/RaceDay_Database.sql)"
+        echo "5. Missing or incomplete README.md"
+        echo ""
+        echo "Please fix the issues and push again."
+        echo ""
+        echo "Check the logs above for specific errors."
+        exit 1
