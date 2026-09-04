@@ -1,0 +1,199 @@
+name: Validate Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        run: |
+          git clone https://github.com/${{ github.repository }}.git .
+          git checkout ${{ github.ref_name }}
+      
+      - name: Validate files
+        run: |
+          echo "================================================"
+          echo "🔍 VALIDATING DOCUMENTATION - PART 1"
+          echo "================================================"
+          echo ""
+          
+          echo "📂 All files in repository:"
+          find . -type f | grep -v ".git" | sort
+          echo ""
+          
+          ERROR=0
+          
+          # Check for ERD file
+          echo "📊 Checking for ERD file..."
+          ERD_FILE=$(find . -type f \( -name "ERD*" -o -name "erd*" -o -name "*diagram*" \) | grep -v ".git" | head -1)
+          if [ -n "$ERD_FILE" ]; then
+            echo "  ✅ Found: $ERD_FILE"
+          else
+            echo "  ❌ No ERD file found"
+            ERROR=1
+          fi
+          echo ""
+          
+          # Check for API Endpoint Plan
+          echo "📋 Checking for API Endpoint Plan..."
+          API_FILE=$(find . -type f \( -name "*API*Endpoint*" -o -name "*Endpoint*Plan*" -o -name "RaceDay*API*" \) | grep -v ".git" | head -1)
+          if [ -n "$API_FILE" ]; then
+            echo "  ✅ Found: $API_FILE"
+          else
+            echo "  ❌ No API Endpoint Plan found"
+            ERROR=1
+          fi
+          echo ""
+          
+          # Check for SQL file
+          echo "🗄️ Checking for SQL file..."
+          SQL_FILE=$(find . -type f -name "*.sql" | grep -v ".git" | head -1)
+          if [ -n "$SQL_FILE" ]; then
+            echo "  ✅ Found: $SQL_FILE"
+          else
+            echo "  ❌ No SQL file found"
+            ERROR=1
+          fi
+          echo ""
+          
+          # Check for README
+          echo "📖 Checking for README..."
+          README_FILE=$(find . -type f -name "README*" | grep -v ".git" | head -1)
+          if [ -n "$README_FILE" ]; then
+            echo "  ✅ Found: $README_FILE"
+          else
+            echo "  ❌ No README found"
+            ERROR=1
+          fi
+          echo ""
+          
+          # Summary
+          echo "================================================"
+          echo "📊 VALIDATION SUMMARY"
+          echo "================================================"
+          
+          if [ $ERROR -eq 0 ]; then
+            echo "✅ ALL FILES FOUND - GREEN BUILD ✓"
+            echo ""
+            echo "Found files:"
+            echo "  📊 ERD: $ERD_FILE"
+            echo "  📋 API Plan: $API_FILE"
+            echo "  🗄️ SQL: $SQL_FILE"
+            echo "  📖 README: $README_FILE"
+            echo "================================================"
+            exit 0
+          else
+            echo "❌ MISSING FILES - RED BUILD ✗"
+            echo ""
+            echo "Required files:"
+            echo "  1. Any ERD file (ERD.png, ERD.pdf, diagram.png, etc)"
+            echo "  2. Any API Endpoint Plan (RaceDay_API_Endpoint_Plan.docx, etc)"
+            echo "  3. Any SQL file (SQL.sql, RaceDay_Database.sql, etc)"
+            echo "  4. README.md"
+            echo "================================================"
+            exit 1
+          fi
+      
+      - name: Analyze SQL
+        if: success() || failure()
+        run: |
+          echo ""
+          echo "================================================"
+          echo "🗄️ SQL SCRIPT ANALYSIS"
+          echo "================================================"
+          
+          SQL_FILE=$(find . -type f -name "*.sql" | grep -v ".git" | head -1)
+          
+          if [ -z "$SQL_FILE" ]; then
+            echo "⚠️ No SQL file found"
+            exit 0
+          fi
+          
+          echo "📄 Analyzing: $SQL_FILE"
+          echo ""
+          
+          TABLE_COUNT=$(grep -c "CREATE TABLE" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 CREATE TABLE statements: $TABLE_COUNT"
+          
+          INSERT_COUNT=$(grep -c "INSERT INTO" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 INSERT statements: $INSERT_COUNT"
+          
+          FK_COUNT=$(grep -c "FOREIGN KEY" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 FOREIGN KEY constraints: $FK_COUNT"
+          
+          PK_COUNT=$(grep -c "PRIMARY KEY" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 PRIMARY KEY definitions: $PK_COUNT"
+          
+          echo ""
+          if [ $TABLE_COUNT -ge 6 ]; then
+            echo "  ✅ Table count ($TABLE_COUNT) meets minimum of 6"
+          else
+            echo "  ⚠️ Warning: Table count ($TABLE_COUNT) is less than 6"
+          fi
+          
+          echo ""
+          echo "================================================"
+      
+      - name: Check commits
+        run: |
+          echo ""
+          echo "================================================"
+          echo "📊 COMMIT STATISTICS"
+          echo "================================================"
+          
+          COMMIT_COUNT=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+          echo "  📊 Total commits: $COMMIT_COUNT"
+          
+          if [ $COMMIT_COUNT -ge 20 ]; then
+            echo "  ✅ Commit count meets minimum requirement (20+)"
+          else
+            echo "  ⚠️ Warning: Only $COMMIT_COUNT commits (minimum 20)"
+          fi
+          
+          echo ""
+          echo "  📋 Recent commits:"
+          git log --oneline -5 2>/dev/null | sed 's/^/    /' || echo "    No commits found"
+          echo ""
+          echo "================================================"
+      
+      - name: Success
+        if: success()
+        run: |
+          echo ""
+          echo "🎉🎉🎉================================================"
+          echo "🎉🎉🎉  GREEN BUILD - SUCCESSFUL  🎉🎉🎉"
+          echo "🎉🎉🎉================================================"
+          echo ""
+          echo "✅ All required files found"
+          echo "✅ Validation passed successfully"
+          echo ""
+          echo "🔗 Repository: ${{ github.repository }}"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+          echo "================================================"
+      
+      - name: Failure
+        if: failure()
+        run: |
+          echo ""
+          echo "❌❌❌================================================"
+          echo "❌❌❌  RED BUILD - FAILED  ❌❌❌"
+          echo "❌❌❌================================================"
+          echo ""
+          echo "Missing required files!"
+          echo ""
+          echo "Required:"
+          echo "  1. Any ERD file (ERD.png, ERD.pdf, diagram.png, etc)"
+          echo "  2. Any API Endpoint Plan (RaceDay_API_Endpoint_Plan.docx, etc)"
+          echo "  3. Any SQL file (SQL.sql, RaceDay_Database.sql, etc)"
+          echo "  4. README.md"
+          echo ""
+          echo "Check the validation output above for details."
+          echo "================================================"
+          exit 1
