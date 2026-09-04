@@ -1,0 +1,166 @@
+name: Validate Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Clone repository
+        run: |
+          git clone https://github.com/${{ github.repository }}.git .
+          git checkout ${{ github.ref_name }}
+          
+      - name: DEBUG - Show all files
+        run: |
+          echo "================================================"
+          echo "📂 FULL DIRECTORY SCAN"
+          echo "================================================"
+          echo ""
+          echo "Root directory:"
+          ls -la
+          echo ""
+          echo "Docs directory:"
+          ls -la docs/ 2>/dev/null || echo "  ❌ docs folder does not exist!"
+          echo ""
+          echo "Looking for files everywhere:"
+          echo "  PNG files:"
+          find . -name "*.png" -type f 2>/dev/null | head -5
+          echo ""
+          echo "  SQL files:"
+          find . -name "*.sql" -type f 2>/dev/null | head -5
+          echo ""
+          echo "  DOCX files:"
+          find . -name "*.docx" -type f 2>/dev/null | head -5
+          echo ""
+          echo "  MD files (README):"
+          find . -name "*.md" -type f 2>/dev/null | head -5
+          echo ""
+          echo "================================================"
+      
+      - name: Validate files (Check Both Locations)
+        run: |
+          echo "================================================"
+          echo "🔍 VALIDATING DOCUMENTATION"
+          echo "================================================"
+          echo ""
+          
+          ERROR=0
+          
+          # Check docs folder first
+          echo "📁 Checking docs folder..."
+          if [ ! -d "docs" ]; then
+            echo "  ⚠️ docs folder not found - checking root directory"
+            # Check root for files
+            if [ -f "ERD.png" ]; then
+              echo "  ✅ ERD.png found in root (should be in docs/)"
+              # Move it to docs
+              mkdir -p docs
+              mv ERD.png docs/
+              echo "  📦 Moved ERD.png to docs/"
+            fi
+            if [ -f "RaceDay_API_Endpoint_Plan.docx" ]; then
+              echo "  ✅ RaceDay_API_Endpoint_Plan.docx found in root (should be in docs/)"
+              mkdir -p docs
+              mv RaceDay_API_Endpoint_Plan.docx docs/
+              echo "  📦 Moved RaceDay_API_Endpoint_Plan.docx to docs/"
+            fi
+            if [ -f "SQL.sql" ]; then
+              echo "  ✅ SQL.sql found in root (should be in docs/)"
+              mkdir -p docs
+              mv SQL.sql docs/
+              echo "  📦 Moved SQL.sql to docs/"
+            fi
+            # Check after moving
+            if [ -d "docs" ]; then
+              echo "  ✅ docs folder created with files"
+            else
+              echo "  ❌ Could not create docs folder"
+              ERROR=1
+            fi
+          else
+            echo "  ✅ docs folder exists"
+          fi
+          echo ""
+          
+          # Now check docs folder for files
+          echo "📊 Checking ERD.png..."
+          if [ -f "docs/ERD.png" ]; then
+            echo "  ✅ docs/ERD.png found"
+          elif [ -f "ERD.png" ]; then
+            echo "  ✅ ERD.png found in root"
+            mkdir -p docs
+            mv ERD.png docs/
+            echo "  📦 Moved to docs/"
+          else
+            echo "  ❌ ERD.png NOT found anywhere!"
+            echo "     Current files:"
+            ls -la
+            ERROR=1
+          fi
+          echo ""
+          
+          echo "📋 Checking RaceDay_API_Endpoint_Plan.docx..."
+          if [ -f "docs/RaceDay_API_Endpoint_Plan.docx" ]; then
+            echo "  ✅ docs/RaceDay_API_Endpoint_Plan.docx found"
+          elif [ -f "RaceDay_API_Endpoint_Plan.docx" ]; then
+            echo "  ✅ RaceDay_API_Endpoint_Plan.docx found in root"
+            mkdir -p docs
+            mv RaceDay_API_Endpoint_Plan.docx docs/
+            echo "  📦 Moved to docs/"
+          else
+            echo "  ❌ RaceDay_API_Endpoint_Plan.docx NOT found anywhere!"
+            ERROR=1
+          fi
+          echo ""
+          
+          echo "🗄️ Checking SQL.sql..."
+          if [ -f "docs/SQL.sql" ]; then
+            echo "  ✅ docs/SQL.sql found"
+          elif [ -f "SQL.sql" ]; then
+            echo "  ✅ SQL.sql found in root"
+            mkdir -p docs
+            mv SQL.sql docs/
+            echo "  📦 Moved to docs/"
+          else
+            echo "  ❌ SQL.sql NOT found anywhere!"
+            ERROR=1
+          fi
+          echo ""
+          
+          echo "📖 Checking README.md..."
+          if [ -f "README.md" ]; then
+            echo "  ✅ README.md found"
+          else
+            echo "  ❌ README.md NOT found!"
+            ERROR=1
+          fi
+          echo ""
+          
+          # Show final docs contents
+          echo "📂 Final docs folder contents:"
+          ls -la docs/ 2>/dev/null || echo "  (empty or missing)"
+          echo ""
+          
+          echo "================================================"
+          if [ $ERROR -eq 0 ]; then
+            echo "✅ ALL FILES FOUND - GREEN BUILD ✓"
+            echo "================================================"
+            exit 0
+          else
+            echo "❌ MISSING FILES - RED BUILD ✗"
+            echo ""
+            echo "Please ensure these files exist:"
+            echo "  1. docs/ERD.png"
+            echo "  2. docs/RaceDay_API_Endpoint_Plan.docx"
+            echo "  3. docs/SQL.sql"
+            echo "  4. README.md"
+            echo "================================================"
+            exit 1
+          fi
