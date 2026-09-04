@@ -1,0 +1,216 @@
+name: Validate Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Validate files
+        run: |
+          echo "================================================"
+          echo "🔍 Validating Documentation - Part 1"
+          echo "================================================"
+          echo ""
+          
+          ERROR_COUNT=0
+          
+          # Check docs folder
+          echo "📁 Checking docs folder..."
+          if [ ! -d "docs" ]; then
+            echo "  ❌ docs folder not found!"
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+          else
+            echo "  ✅ docs folder exists"
+            echo "  📂 Contents:"
+            ls -la docs/
+          fi
+          echo ""
+          
+          # Check ERD file (YOUR FILE: ERD.png)
+          echo "📊 Checking ERD file..."
+          if [ ! -f "docs/ERD.png" ] && [ ! -f "docs/ERD.pdf" ] && [ ! -f "docs/ERD.jpg" ]; then
+            echo "  ❌ ERD file not found!"
+            echo "     Your file should be: docs/ERD.png"
+            echo "     Current docs folder has:"
+            ls -la docs/ | grep -i erd || echo "     No ERD file found"
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+          else
+            echo "  ✅ ERD file found"
+          fi
+          echo ""
+          
+          # Check API Endpoint Plan (YOUR FILE: RaceDay_API_Endpoint_Plan.docx)
+          echo "📋 Checking API Endpoint Plan..."
+          if [ ! -f "docs/RaceDay_API_Endpoint_Plan.docx" ] && [ ! -f "docs/API_Endpoint_Plan.md" ] && [ ! -f "docs/API_Endpoint_Plan.pdf" ]; then
+            echo "  ❌ API Endpoint Plan not found!"
+            echo "     Your file should be: docs/RaceDay_API_Endpoint_Plan.docx"
+            echo "     Current docs folder has:"
+            ls -la docs/ | grep -i endpoint || echo "     No API Endpoint Plan found"
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+          else
+            echo "  ✅ API Endpoint Plan found"
+          fi
+          echo ""
+          
+          # Check SQL Script (YOUR FILE: SQL.sql)
+          echo "🗄️ Checking SQL Script..."
+          if [ ! -f "docs/SQL.sql" ] && [ ! -f "docs/RaceDay_Database.sql" ] && [ ! -f "docs/database.sql" ]; then
+            echo "  ❌ SQL Script not found!"
+            echo "     Your file should be: docs/SQL.sql"
+            echo "     Current docs folder has:"
+            ls -la docs/ | grep -i sql || echo "     No SQL file found"
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+          else
+            echo "  ✅ SQL Script found"
+          fi
+          echo ""
+          
+          # Check README
+          echo "📖 Checking README.md..."
+          if [ ! -f "README.md" ]; then
+            echo "  ❌ README.md not found!"
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+          else
+            echo "  ✅ README.md found"
+          fi
+          echo ""
+          
+          # Summary
+          echo "================================================"
+          echo "📊 Validation Summary"
+          echo "================================================"
+          echo "  Errors: $ERROR_COUNT"
+          echo ""
+          
+          if [ $ERROR_COUNT -eq 0 ]; then
+            echo "✅ All required files are present!"
+            echo "🎉 Green Build - Validation Passed ✓"
+            echo "================================================"
+            exit 0
+          else
+            echo "❌ Validation Failed - $ERROR_COUNT error(s) found"
+            echo ""
+            echo "Expected files in docs/ folder:"
+            echo "  1. ERD.png (or ERD.pdf, ERD.jpg)"
+            echo "  2. RaceDay_API_Endpoint_Plan.docx (or API_Endpoint_Plan.md)"
+            echo "  3. SQL.sql (or RaceDay_Database.sql)"
+            echo ""
+            echo "Current docs/ folder contents:"
+            ls -la docs/
+            echo "================================================"
+            exit 1
+          fi
+      
+      - name: SQL Analysis
+        if: success() || failure()
+        run: |
+          echo ""
+          echo "================================================"
+          echo "🗄️ SQL Script Analysis"
+          echo "================================================"
+          
+          # Find the SQL file (YOUR FILE: SQL.sql)
+          if [ -f "docs/SQL.sql" ]; then
+            SQL_FILE="docs/SQL.sql"
+          elif [ -f "docs/RaceDay_Database.sql" ]; then
+            SQL_FILE="docs/RaceDay_Database.sql"
+          elif [ -f "docs/database.sql" ]; then
+            SQL_FILE="docs/database.sql"
+          else
+            echo "⚠️ No SQL file found to analyze"
+            exit 0
+          fi
+          
+          echo "📄 Analyzing: $SQL_FILE"
+          echo ""
+          
+          TABLE_COUNT=$(grep -c "CREATE TABLE" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 CREATE TABLE statements: $TABLE_COUNT"
+          
+          INSERT_COUNT=$(grep -c "INSERT INTO" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 INSERT statements: $INSERT_COUNT"
+          
+          FK_COUNT=$(grep -c "FOREIGN KEY" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 FOREIGN KEY constraints: $FK_COUNT"
+          
+          echo ""
+          if [ $TABLE_COUNT -lt 6 ]; then
+            echo "  ⚠️ Warning: Less than 6 tables (minimum required)"
+          else
+            echo "  ✅ Table count meets minimum"
+          fi
+          
+          echo ""
+          echo "================================================"
+      
+      - name: Commit Count
+        run: |
+          echo ""
+          echo "================================================"
+          echo "📊 Commit Statistics"
+          echo "================================================"
+          
+          COMMIT_COUNT=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+          echo "  📊 Total commits: $COMMIT_COUNT"
+          
+          if [ $COMMIT_COUNT -lt 20 ]; then
+            echo "  ⚠️ Warning: Only $COMMIT_COUNT commits (minimum 20)"
+          else
+            echo "  ✅ Commit count meets minimum requirement"
+          fi
+          echo ""
+          echo "================================================"
+      
+      - name: Success
+        if: success()
+        run: |
+          echo ""
+          echo "🎉🎉🎉 SUCCESS - GREEN BUILD 🎉🎉🎉"
+          echo "================================================"
+          echo ""
+          echo "✅ All required documentation files are present"
+          echo "✅ SQL script analysis completed"
+          echo "✅ Validation passed"
+          echo ""
+          echo "📁 Files found in docs/:"
+          ls -la docs/
+          echo ""
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo ""
+          echo "💡 Next Steps:"
+          echo "  1. Ensure YouTube video is uploaded and linked in README"
+          echo "  2. Submit GitHub link on ARC"
+          echo "================================================"
+      
+      - name: Failure
+        if: failure()
+        run: |
+          echo ""
+          echo "❌❌❌ FAILED - RED BUILD ❌❌❌"
+          echo "================================================"
+          echo ""
+          echo "Missing required files in docs/ folder."
+          echo ""
+          echo "Your docs folder currently has:"
+          ls -la docs/
+          echo ""
+          echo "Required files:"
+          echo "  📁 docs/ERD.png (or ERD.pdf, ERD.jpg)"
+          echo "  📁 docs/RaceDay_API_Endpoint_Plan.docx (or API_Endpoint_Plan.md)"
+          echo "  📁 docs/SQL.sql (or RaceDay_Database.sql)"
+          echo "  📁 README.md"
+          echo ""
+          echo "Please ensure files are in the docs/ folder and push again."
+          echo "================================================"
+          exit 1
