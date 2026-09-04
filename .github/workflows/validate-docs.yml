@@ -1,0 +1,226 @@
+name: Validate Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    # Use container with pre-installed tools to avoid Node.js
+    container:
+      image: ubuntu:22.04
+    
+    steps:
+      # Manually clone instead of using actions/checkout
+      - name: Clone repository
+        run: |
+          apt-get update && apt-get install -y git
+          git clone https://github.com/${{ github.repository }}.git repo
+          cd repo
+          git checkout ${{ github.ref_name }}
+          echo "REPO_PATH=$(pwd)" >> $GITHUB_ENV
+      
+      - name: Validate files
+        run: |
+          cd repo
+          echo "================================================"
+          echo "🔍 Validating Documentation - Part 1"
+          echo "================================================"
+          echo ""
+          
+          ERROR_COUNT=0
+          
+          # Check docs folder
+          echo "📁 Checking docs folder..."
+          if [ ! -d "docs" ]; then
+            echo "  ❌ docs folder not found!"
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+          else
+            echo "  ✅ docs folder exists"
+            echo "  📂 Contents:"
+            ls -la docs/
+          fi
+          echo ""
+          
+          # Check ERD file
+          echo "📊 Checking ERD file..."
+          if [ ! -f "docs/ERD.png" ] && [ ! -f "docs/ERD.pdf" ] && [ ! -f "docs/ERD.jpg" ] && [ ! -f "docs/ERD.jpeg" ]; then
+            echo "  ❌ ERD file not found!"
+            echo "     Required: docs/ERD.png, docs/ERD.pdf, or docs/ERD.jpg"
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+          else
+            echo "  ✅ ERD file found"
+          fi
+          echo ""
+          
+          # Check API Endpoint Plan
+          echo "📋 Checking API Endpoint Plan..."
+          if [ ! -f "docs/API_Endpoint_Plan.md" ] && [ ! -f "docs/API_Endpoint_Plan.pdf" ] && [ ! -f "docs/API_Endpoint_Plan.txt" ]; then
+            echo "  ❌ API Endpoint Plan not found!"
+            echo "     Required: docs/API_Endpoint_Plan.md or docs/API_Endpoint_Plan.pdf"
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+          else
+            echo "  ✅ API Endpoint Plan found"
+          fi
+          echo ""
+          
+          # Check SQL Script
+          echo "🗄️ Checking SQL Script..."
+          if [ ! -f "docs/RaceDay_Database.sql" ] && [ ! -f "docs/database.sql" ] && [ ! -f "docs/schema.sql" ]; then
+            echo "  ❌ SQL Script not found!"
+            echo "     Required: docs/RaceDay_Database.sql"
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+          else
+            echo "  ✅ SQL Script found"
+          fi
+          echo ""
+          
+          # Check README
+          echo "📖 Checking README.md..."
+          if [ ! -f "README.md" ]; then
+            echo "  ❌ README.md not found!"
+            ERROR_COUNT=$((ERROR_COUNT + 1))
+          else
+            echo "  ✅ README.md found"
+            
+            # Check README content
+            if grep -qi "RaceDay" README.md; then
+              echo "  ✅ Contains system name"
+            else
+              echo "  ⚠️ Warning: README might not have system name"
+            fi
+            
+            if grep -qi "Organiser" README.md && grep -qi "Participant" README.md; then
+              echo "  ✅ Describes both user roles"
+            else
+              echo "  ⚠️ Warning: README might not describe both roles"
+            fi
+            
+            if grep -qi "YouTube" README.md || grep -qi "youtube.com" README.md || grep -qi "youtu.be" README.md; then
+              echo "  ✅ Contains YouTube link"
+            else
+              echo "  ⚠️ Warning: README might not have video link"
+            fi
+          fi
+          echo ""
+          
+          # Summary
+          echo "================================================"
+          echo "📊 Validation Summary"
+          echo "================================================"
+          echo "  Errors: $ERROR_COUNT"
+          echo ""
+          
+          if [ $ERROR_COUNT -eq 0 ]; then
+            echo "✅ All required files are present!"
+            echo "🎉 Green Build - Validation Passed ✓"
+            echo "================================================"
+            exit 0
+          else
+            echo "❌ Validation Failed - $ERROR_COUNT error(s) found"
+            echo "================================================"
+            exit 1
+          fi
+      
+      - name: SQL Analysis
+        if: success() || failure()
+        run: |
+          cd repo
+          echo ""
+          echo "================================================"
+          echo "🗄️ SQL Script Analysis"
+          echo "================================================"
+          
+          if [ -f "docs/RaceDay_Database.sql" ]; then
+            SQL_FILE="docs/RaceDay_Database.sql"
+          elif [ -f "docs/database.sql" ]; then
+            SQL_FILE="docs/database.sql"
+          elif [ -f "docs/schema.sql" ]; then
+            SQL_FILE="docs/schema.sql"
+          else
+            echo "⚠️ No SQL file found"
+            exit 0
+          fi
+          
+          echo "📄 Analyzing: $SQL_FILE"
+          echo ""
+          
+          TABLE_COUNT=$(grep -c "CREATE TABLE" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 CREATE TABLE statements: $TABLE_COUNT"
+          
+          INSERT_COUNT=$(grep -c "INSERT INTO" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 INSERT statements: $INSERT_COUNT"
+          
+          FK_COUNT=$(grep -c "FOREIGN KEY" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 FOREIGN KEY constraints: $FK_COUNT"
+          
+          echo ""
+          if [ $TABLE_COUNT -lt 6 ]; then
+            echo "  ⚠️ Warning: Less than 6 tables (minimum required)"
+          else
+            echo "  ✅ Table count meets minimum"
+          fi
+          
+          echo ""
+          echo "================================================"
+      
+      - name: Commit Check
+        run: |
+          cd repo
+          echo ""
+          echo "================================================"
+          echo "📊 Commit Statistics"
+          echo "================================================"
+          
+          COMMIT_COUNT=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+          echo "  📊 Total commits: $COMMIT_COUNT"
+          
+          if [ $COMMIT_COUNT -lt 20 ]; then
+            echo "  ⚠️ Warning: Only $COMMIT_COUNT commits (minimum 20)"
+          else
+            echo "  ✅ Commit count meets minimum requirement"
+          fi
+          echo ""
+          echo "================================================"
+      
+      - name: Success
+        if: success()
+        run: |
+          echo ""
+          echo "🎉🎉🎉 SUCCESS - GREEN BUILD 🎉🎉🎉"
+          echo "================================================"
+          echo ""
+          echo "✅ All required documentation files are present"
+          echo "✅ SQL script analysis completed"
+          echo "✅ Validation passed"
+          echo ""
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo ""
+          echo "💡 Next Steps:"
+          echo "  1. Ensure YouTube video is uploaded and linked in README"
+          echo "  2. Submit GitHub link on ARC"
+          echo "================================================"
+      
+      - name: Failure
+        if: failure()
+        run: |
+          echo ""
+          echo "❌❌❌ FAILED - RED BUILD ❌❌❌"
+          echo "================================================"
+          echo ""
+          echo "One or more required files are missing."
+          echo ""
+          echo "Required files:"
+          echo "  📁 docs/ERD.png (or .pdf, .jpg)"
+          echo "  📁 docs/API_Endpoint_Plan.md (or .pdf)"
+          echo "  📁 docs/RaceDay_Database.sql"
+          echo "  📁 README.md"
+          echo ""
+          echo "Fix the issues and push again."
+          echo "================================================"
+          exit 1
