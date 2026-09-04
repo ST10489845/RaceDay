@@ -1,0 +1,39 @@
+name: Validate
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - run: git clone https://github.com/${{ github.repository }}.git .
+      
+      - name: Check files
+        run: |
+          echo "Checking files..."
+          echo ""
+          
+          # Find all files
+          echo "All files:"
+          find . -type f | grep -v ".git" | sort
+          echo ""
+          
+          # Check each type
+          ERD=$(find . -type f \( -name "ERD*" -o -name "*diagram*" \) | grep -v ".git" | head -1)
+          API=$(find . -type f \( -name "*API*" -o -name "*Endpoint*" \) | grep -v ".git" | head -1)
+          SQL=$(find . -type f -name "*.sql" | grep -v ".git" | head -1)
+          README=$(find . -type f -name "README*" | grep -v ".git" | head -1)
+          
+          echo "ERD: ${ERD:-NOT FOUND}"
+          echo "API: ${API:-NOT FOUND}"
+          echo "SQL: ${SQL:-NOT FOUND}"
+          echo "README: ${README:-NOT FOUND}"
+          echo ""
+          
+          if [ -n "$ERD" ] && [ -n "$API" ] && [ -n "$SQL" ] && [ -n "$README" ]; then
+            echo "✅ All files found - Green Build ✓"
+            exit 0
+          else
+            echo "❌ Missing files - Red Build ✗"
+            exit 1
+          fi
