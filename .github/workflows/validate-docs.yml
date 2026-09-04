@@ -1,0 +1,229 @@
+name: Validate Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: DEBUG - Show all files
+        run: |
+          echo "================================================"
+          echo "📂 CURRENT DIRECTORY STRUCTURE"
+          echo "================================================"
+          echo ""
+          echo "All files in repository:"
+          ls -la
+          echo ""
+          echo "================================================"
+      
+      - name: Validate Files (Root Directory)
+        run: |
+          echo "================================================"
+          echo "🔍 VALIDATING DOCUMENTATION - PART 1"
+          echo "================================================"
+          echo ""
+          
+          ERROR=0
+          
+          # Check ERD.png in root
+          echo "📊 Checking ERD.png..."
+          if [ -f "ERD.png" ]; then
+            echo "  ✅ ERD.png found in root"
+            FILE_SIZE=$(du -h ERD.png | cut -f1)
+            echo "     Size: $FILE_SIZE"
+          else
+            echo "  ❌ ERD.png NOT found in root"
+            ERROR=1
+          fi
+          echo ""
+          
+          # Check RaceDay_API_Endpoint_Plan.docx in root
+          echo "📋 Checking RaceDay_API_Endpoint_Plan.docx..."
+          if [ -f "RaceDay_API_Endpoint_Plan.docx" ]; then
+            echo "  ✅ RaceDay_API_Endpoint_Plan.docx found in root"
+            FILE_SIZE=$(du -h RaceDay_API_Endpoint_Plan.docx | cut -f1)
+            echo "     Size: $FILE_SIZE"
+          else
+            echo "  ❌ RaceDay_API_Endpoint_Plan.docx NOT found in root"
+            ERROR=1
+          fi
+          echo ""
+          
+          # Check SQL.sql in root
+          echo "🗄️ Checking SQL.sql..."
+          if [ -f "SQL.sql" ]; then
+            echo "  ✅ SQL.sql found in root"
+            FILE_SIZE=$(du -h SQL.sql | cut -f1)
+            echo "     Size: $FILE_SIZE"
+          else
+            echo "  ❌ SQL.sql NOT found in root"
+            ERROR=1
+          fi
+          echo ""
+          
+          # Check README.md in root
+          echo "📖 Checking README.md..."
+          if [ -f "README.md" ]; then
+            echo "  ✅ README.md found in root"
+            FILE_SIZE=$(du -h README.md | cut -f1)
+            echo "     Size: $FILE_SIZE"
+          else
+            echo "  ❌ README.md NOT found in root"
+            ERROR=1
+          fi
+          echo ""
+          
+          # Check docs folder (optional - just in case)
+          echo "📁 Checking docs folder (optional)..."
+          if [ -d "docs" ]; then
+            echo "  ✅ docs folder exists"
+            echo "  Contents:"
+            ls -la docs/
+          else
+            echo "  ℹ️ No docs folder found - files are in root"
+          fi
+          echo ""
+          
+          # Summary
+          echo "================================================"
+          echo "📊 VALIDATION SUMMARY"
+          echo "================================================"
+          
+          if [ $ERROR -eq 0 ]; then
+            echo "✅ ALL REQUIRED FILES FOUND IN ROOT"
+            echo "🎉 GREEN BUILD - VALIDATION PASSED ✓"
+            echo "================================================"
+            exit 0
+          else
+            echo "❌ VALIDATION FAILED - $ERROR ERROR(S)"
+            echo ""
+            echo "Required files in root directory:"
+            echo "  1. ERD.png"
+            echo "  2. RaceDay_API_Endpoint_Plan.docx"
+            echo "  3. SQL.sql"
+            echo "  4. README.md"
+            echo ""
+            echo "Current files in root:"
+            ls -la
+            echo "================================================"
+            exit 1
+          fi
+      
+      - name: Analyze SQL (if exists)
+        if: success() || failure()
+        run: |
+          echo ""
+          echo "================================================"
+          echo "🗄️ SQL SCRIPT ANALYSIS"
+          echo "================================================"
+          
+          if [ -f "SQL.sql" ]; then
+            SQL_FILE="SQL.sql"
+          elif [ -f "docs/SQL.sql" ]; then
+            SQL_FILE="docs/SQL.sql"
+          else
+            echo "⚠️ No SQL file found"
+            exit 0
+          fi
+          
+          echo "📄 Analyzing: $SQL_FILE"
+          echo ""
+          
+          TABLE_COUNT=$(grep -c "CREATE TABLE" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 CREATE TABLE statements: $TABLE_COUNT"
+          
+          INSERT_COUNT=$(grep -c "INSERT INTO" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 INSERT statements: $INSERT_COUNT"
+          
+          FK_COUNT=$(grep -c "FOREIGN KEY" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 FOREIGN KEY constraints: $FK_COUNT"
+          
+          PK_COUNT=$(grep -c "PRIMARY KEY" "$SQL_FILE" 2>/dev/null || echo "0")
+          echo "  📊 PRIMARY KEY definitions: $PK_COUNT"
+          
+          echo ""
+          if [ $TABLE_COUNT -ge 6 ]; then
+            echo "  ✅ Table count ($TABLE_COUNT) meets minimum of 6"
+          else
+            echo "  ⚠️ Warning: Table count ($TABLE_COUNT) is less than 6"
+          fi
+          
+          echo ""
+          echo "================================================"
+      
+      - name: Check commits
+        run: |
+          echo ""
+          echo "================================================"
+          echo "📊 COMMIT STATISTICS"
+          echo "================================================"
+          
+          COMMIT_COUNT=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+          echo "  📊 Total commits: $COMMIT_COUNT"
+          
+          if [ $COMMIT_COUNT -ge 20 ]; then
+            echo "  ✅ Commit count meets minimum requirement (20+)"
+          else
+            echo "  ⚠️ Warning: Only $COMMIT_COUNT commits (minimum 20)"
+          fi
+          
+          echo ""
+          echo "  📋 Recent commits:"
+          git log --oneline -5 2>/dev/null | sed 's/^/    /' || echo "    No commits found"
+          echo ""
+          echo "================================================"
+      
+      - name: Success
+        if: success()
+        run: |
+          echo ""
+          echo "🎉🎉🎉================================================"
+          echo "🎉🎉🎉  SUCCESS - GREEN BUILD PASSED  🎉🎉🎉"
+          echo "🎉🎉🎉================================================"
+          echo ""
+          echo "✅ All required files found in root directory"
+          echo "✅ Validation passed successfully"
+          echo ""
+          echo "📁 Files found:"
+          ls -la ERD.png RaceDay_API_Endpoint_Plan.docx SQL.sql README.md 2>/dev/null || echo "  (check files)"
+          echo ""
+          echo "🔗 Repository: ${{ github.repository }}"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+          echo ""
+          echo "💡 Next Steps:"
+          echo "  1. Ensure YouTube video is uploaded and linked in README"
+          echo "  2. Submit GitHub link on ARC"
+          echo "================================================"
+      
+      - name: Failure
+        if: failure()
+        run: |
+          echo ""
+          echo "❌❌❌================================================"
+          echo "❌❌❌  FAILED - RED BUILD  ❌❌❌"
+          echo "❌❌❌================================================"
+          echo ""
+          echo "Missing required files!"
+          echo ""
+          echo "Files required in root directory:"
+          echo "  📊 ERD.png"
+          echo "  📋 RaceDay_API_Endpoint_Plan.docx"
+          echo "  🗄️ SQL.sql"
+          echo "  📖 README.md"
+          echo ""
+          echo "Current files in root:"
+          ls -la
+          echo ""
+          echo "Please ensure all required files are in the root directory."
+          echo "================================================"
+          exit 1
