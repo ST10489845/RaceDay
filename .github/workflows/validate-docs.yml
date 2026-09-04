@@ -1,0 +1,110 @@
+name: Validate Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Clone repository
+        run: |
+          # Install git if needed
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq git
+          
+          # Clone using https
+          git clone --depth 1 https://github.com/${{ github.repository }}.git repo
+          cd repo
+          echo "REPO_PATH=$(pwd)" >> $GITHUB_ENV
+          
+      - name: Validate files
+        run: |
+          cd $REPO_PATH
+          
+          echo "================================================"
+          echo "🔍 VALIDATING DOCUMENTATION"
+          echo "================================================"
+          echo ""
+          
+          # Check if docs folder exists
+          if [ ! -d "docs" ]; then
+            echo "❌ docs folder not found!"
+            echo "Creating empty docs folder to show error..."
+            mkdir -p docs
+            ERROR=1
+          else
+            echo "✅ docs folder exists"
+          fi
+          
+          echo ""
+          echo "📂 Current docs contents:"
+          ls -la docs/ || echo "  (empty)"
+          echo ""
+          
+          # Check for files
+          ERROR=0
+          
+          # Check ERD
+          if [ -f "docs/ERD.png" ]; then
+            echo "✅ ERD.png found"
+          elif [ -f "docs/ERD.pdf" ]; then
+            echo "✅ ERD.pdf found"
+          elif [ -f "docs/ERD.jpg" ]; then
+            echo "✅ ERD.jpg found"
+          else
+            echo "❌ No ERD file found (ERD.png, ERD.pdf, or ERD.jpg)"
+            ERROR=1
+          fi
+          
+          # Check API Plan
+          if [ -f "docs/RaceDay_API_Endpoint_Plan.docx" ]; then
+            echo "✅ RaceDay_API_Endpoint_Plan.docx found"
+          elif [ -f "docs/RaceDay_API_Endpoint_Plan.pdf" ]; then
+            echo "✅ RaceDay_API_Endpoint_Plan.pdf found"
+          elif [ -f "docs/API_Endpoint_Plan.md" ]; then
+            echo "✅ API_Endpoint_Plan.md found"
+          else
+            echo "❌ No API Endpoint Plan found"
+            ERROR=1
+          fi
+          
+          # Check SQL
+          if [ -f "docs/SQL.sql" ]; then
+            echo "✅ SQL.sql found"
+          elif [ -f "docs/RaceDay_Database.sql" ]; then
+            echo "✅ RaceDay_Database.sql found"
+          else
+            echo "❌ No SQL file found (SQL.sql or RaceDay_Database.sql)"
+            ERROR=1
+          fi
+          
+          # Check README
+          if [ -f "README.md" ]; then
+            echo "✅ README.md found"
+          else
+            echo "❌ README.md not found"
+            ERROR=1
+          fi
+          
+          echo ""
+          echo "================================================"
+          
+          if [ $ERROR -eq 0 ]; then
+            echo "✅✅✅ ALL FILES FOUND - GREEN BUILD ✅✅✅"
+            exit 0
+          else
+            echo "❌❌❌ MISSING FILES - RED BUILD ❌❌❌"
+            echo ""
+            echo "Required files in docs/:"
+            echo "  1. ERD.png (or ERD.pdf, ERD.jpg)"
+            echo "  2. RaceDay_API_Endpoint_Plan.docx (or API_Endpoint_Plan.md)"
+            echo "  3. SQL.sql (or RaceDay_Database.sql)"
+            echo "  4. README.md (in root)"
+            exit 1
+          fi
